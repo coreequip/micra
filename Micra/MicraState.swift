@@ -7,6 +7,14 @@ import AppKit
 @Observable
 @MainActor
 class MicraState {
+    private enum Keys {
+        static let walkieTalkieMode = "WalkieTalkieMode"
+        static let audioFeedbackEnabled = "AudioFeedbackEnabled"
+        static let isLockIntentActive = "IsLockIntentActive"
+        static let lockedDeviceUID = "LockedDeviceUID"
+        static let micraShortcut = "MicraShortcut"
+    }
+
     private let engine = AudioEngine()
     
     var isMuted: Bool = true {
@@ -33,7 +41,7 @@ class MicraState {
     
     var isWalkieTalkieMode: Bool = false {
         didSet {
-            UserDefaults.standard.set(isWalkieTalkieMode, forKey: "WalkieTalkieMode")
+            UserDefaults.standard.set(isWalkieTalkieMode, forKey: Keys.walkieTalkieMode)
             if isWalkieTalkieMode { engine.isMuted = true }
             registerGlobalShortcut(currentShortcut)
         }
@@ -41,21 +49,21 @@ class MicraState {
 
     var isAudioFeedbackEnabled: Bool = true {
         didSet {
-            UserDefaults.standard.set(isAudioFeedbackEnabled, forKey: "AudioFeedbackEnabled")
+            UserDefaults.standard.set(isAudioFeedbackEnabled, forKey: Keys.audioFeedbackEnabled)
         }
     }
     
     var isLockedToCurrentDevice: Bool = false {
         didSet {
             if isLockedToCurrentDevice {
-                UserDefaults.standard.set(true, forKey: "IsLockIntentActive")
+                UserDefaults.standard.set(true, forKey: Keys.isLockIntentActive)
                 if let uid = engine.currentDeviceUID {
-                    UserDefaults.standard.set(uid, forKey: "LockedDeviceUID")
+                    UserDefaults.standard.set(uid, forKey: Keys.lockedDeviceUID)
                 }
             } else {
-                let preferredUID = UserDefaults.standard.string(forKey: "LockedDeviceUID")
+                let preferredUID = UserDefaults.standard.string(forKey: Keys.lockedDeviceUID)
                 if let uid = preferredUID, engine.getDeviceID(for: uid) != nil {
-                    UserDefaults.standard.set(false, forKey: "IsLockIntentActive")
+                    UserDefaults.standard.set(false, forKey: Keys.isLockIntentActive)
                 }
             }
         }
@@ -73,8 +81,8 @@ class MicraState {
         self.isMuted = engine.isMuted
         self.isRunning = engine.isRunning
         self.launchAtLogin = SMAppService.mainApp.status == .enabled
-        self.isWalkieTalkieMode = UserDefaults.standard.bool(forKey: "WalkieTalkieMode")
-        self.isAudioFeedbackEnabled = UserDefaults.standard.object(forKey: "AudioFeedbackEnabled") as? Bool ?? true
+        self.isWalkieTalkieMode = UserDefaults.standard.bool(forKey: Keys.walkieTalkieMode)
+        self.isAudioFeedbackEnabled = UserDefaults.standard.object(forKey: Keys.audioFeedbackEnabled) as? Bool ?? true
         self.handleDeviceChange()
         self.currentShortcut = loadShortcut()
         engine.onStateChange = { [weak self] in
@@ -96,8 +104,8 @@ class MicraState {
     private func handleDeviceChange() {
         self.isMuted = engine.isMuted
         self.isRunning = engine.isRunning
-        let isLockIntentActive = UserDefaults.standard.bool(forKey: "IsLockIntentActive")
-        let preferredUID = UserDefaults.standard.string(forKey: "LockedDeviceUID")
+        let isLockIntentActive = UserDefaults.standard.bool(forKey: Keys.isLockIntentActive)
+        let preferredUID = UserDefaults.standard.string(forKey: Keys.lockedDeviceUID)
         if isLockIntentActive, let uid = preferredUID {
             if let targetID = engine.getDeviceID(for: uid) {
                 if engine.currentDeviceID != targetID {
@@ -143,12 +151,12 @@ class MicraState {
     
     private func saveShortcut(_ shortcut: Shortcut?) {
         if let data = try? JSONEncoder().encode(shortcut) {
-            UserDefaults.standard.set(data, forKey: "MicraShortcut")
+            UserDefaults.standard.set(data, forKey: Keys.micraShortcut)
         }
     }
     
     private func loadShortcut() -> Shortcut? {
-        guard let data = UserDefaults.standard.data(forKey: "MicraShortcut"),
+        guard let data = UserDefaults.standard.data(forKey: Keys.micraShortcut),
               let shortcut = try? JSONDecoder().decode(Shortcut.self, from: data) else {
             return Shortcut(keyCode: 46, modifierFlags: 0x0100 | 0x0200)
         }

@@ -20,7 +20,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let contentView = PopoverView(state: state)
-        popover.contentSize = NSSize(width: 280, height: 300)
+        popover.contentSize = NSSize(width: 280, height: 340)
         popover.behavior = .transient
         popover.contentViewController = NSHostingController(rootView: contentView)
         
@@ -107,41 +107,50 @@ struct PopoverView: View {
     @Bindable var state: MicraState
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 0) {
+            // Device Name
             Text(state.deviceName)
-                .font(.headline)
-                .foregroundColor(.secondary)
+                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .foregroundColor(.primary.opacity(0.9))
                 .lineLimit(1)
-                .padding(.top, 8)
+                .padding(.top, 24)
+                .padding(.horizontal, 20)
             
             Divider()
+                .padding(.top, 12)
+                .padding(.horizontal, 20)
+                .opacity(0.5)
             
+            // Shortcut Section
             VStack(alignment: .leading, spacing: 8) {
                 Text("Mic mute shortcut:")
-                    .font(.caption)
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.secondary)
+                
                 ShortcutRecorder(shortcut: $state.currentShortcut)
             }
+            .padding(.top, 16)
+            .padding(.horizontal, 20)
             
-            VStack(alignment: .leading, spacing: 12) {
+            // Toggles
+            VStack(alignment: .leading, spacing: 14) {
                 Toggle("Push-to-talk mode", isOn: $state.isWalkieTalkieMode)
-                    .toggleStyle(.checkbox)
-                    .help("Push-to-talk: The microphone is only unmuted while the hotkey is held down.")
-                
                 Toggle("Lock input device", isOn: $state.isLockedToCurrentDevice)
-                    .toggleStyle(.checkbox)
-                    .help("Automatically switch back to this microphone if macOS changes the input device (e.g. when connecting AirPods).")
-
                 Toggle("Play feedback sound", isOn: $state.isAudioFeedbackEnabled)
-                    .toggleStyle(.checkbox)
-                    .help("Play a sound when the microphone is muted or unmuted.")
-                
                 Toggle("Launch at login", isOn: $state.launchAtLogin)
-                    .toggleStyle(.checkbox)
             }
+            .toggleStyle(.checkbox)
+            .font(.system(size: 14, weight: .medium))
+            .padding(.top, 20)
+            .padding(.horizontal, 20)
+            
+            Spacer(minLength: 24)
             
             Divider()
+                .padding(.horizontal, 20)
+                .opacity(0.5)
             
+            // Footer Buttons
             HStack {
                 Button("About") {
                     if let url = URL(string: "https://micr.app") {
@@ -149,7 +158,6 @@ struct PopoverView: View {
                     }
                 }
                 .buttonStyle(.bordered)
-                .help("Visit micr.app")
                 
                 Spacer()
                 
@@ -158,11 +166,22 @@ struct PopoverView: View {
                 }
                 .buttonStyle(.bordered)
             }
-            .padding(.bottom, 4)
+            .padding(.top, 16)
+            .padding(.horizontal, 20)
+            .padding(.bottom, 24)
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 16)
-        .frame(width: 280, height: 300)
-        .background(.ultraThinMaterial)
+        .frame(width: 280)
+        .background(VisualEffectView().ignoresSafeArea())
     }
+}
+
+struct VisualEffectView: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.blendingMode = .behindWindow
+        view.state = .active
+        view.material = .popover
+        return view
+    }
+    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {}
 }

@@ -4,6 +4,11 @@ import AudioToolbox
 class AudioEngine {
     var onStateChange: (() -> Void)?
     private var lastListenedDeviceID: AudioDeviceID?
+    
+    // Track listener blocks to remove them later
+    private var inputMuteListener: AudioObjectPropertyListenerBlock?
+    private var globalMuteListener: AudioObjectPropertyListenerBlock?
+    private var isRunningListener: AudioObjectPropertyListenerBlock?
 
     private var inputDevice: AudioDeviceID? {
         var deviceId = kAudioObjectUnknown
@@ -143,13 +148,34 @@ class AudioEngine {
     private func updateDeviceSpecificListeners() {
         let currentID = inputDevice
         if currentID == lastListenedDeviceID && currentID != nil { return }
-        if let newID = currentID {
+        
+        // Remove old listeners if device changed
+        if let oldID = lastListenedDeviceID {
             var inputMute = AudioObjectPropertyAddress(mSelector: kAudioDevicePropertyMute, mScope: kAudioDevicePropertyScopeInput, mElement: kAudioObjectPropertyElementWildcard)
-            AudioObjectAddPropertyListenerBlock(newID, &inputMute, .main) { [weak self] _, _ in self?.onStateChange?() }
+            if let listener = inputMuteListener { AudioObjectRemovePropertyListenerBlock(oldID, &inputMute, .main, listener) }
+            
             var globalMute = AudioObjectPropertyAddress(mSelector: kAudioDevicePropertyMute, mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementWildcard)
-            AudioObjectAddPropertyListenerBlock(newID, &globalMute, .main) { [weak self] _, _ in self?.onStateChange?() }
+            if let listener = globalMuteListener { AudioObjectRemovePropertyListenerBlock(oldID, &globalMute, .main, listener) }
+            
             var isRunning = AudioObjectPropertyAddress(mSelector: kAudioDevicePropertyDeviceIsRunningSomewhere, mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementMain)
-            AudioObjectAddPropertyListenerBlock(newID, &isRunning, .main) { [weak self] _, _ in self?.onStateChange?() }
+            if let listener = isRunningListener { AudioObjectRemovePropertyListenerBlock(oldID, &isRunning, .main, listener) }
+        }
+
+        if let newID = currentID {
+            let listener: AudioObjectPropertyListenerBlock = { [weak self] _, _ in self?.onStateChange?() }
+            
+            var inputMute = AudioObjectPropertyAddress(mSelector: kAudioDevicePropertyMute, mScope: kAudioDevicePropertyScopeInput, mElement: kAudioObjectPropertyElementWildcard)
+            AudioObjectAddPropertyListenerBlock(newID, &inputMute, .main, listener)
+            inputMuteListener = listener
+            
+            var globalMute = AudioObjectPropertyAddress(mSelector: kAudioDevicePropertyMute, mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementWildcard)
+            AudioObjectAddPropertyListenerBlock(newID, &globalMute, .main, listener)
+            globalMuteListener = listener
+            
+            var isRunning = AudioObjectPropertyAddress(mSelector: kAudioDevicePropertyDeviceIsRunningSomewhere, mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementMain)
+            AudioObjectAddPropertyListenerBlock(newID, &isRunning, .main, listener)
+            isRunningListener = listener
+            
             lastListenedDeviceID = newID
         }
     }
