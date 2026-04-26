@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Micra — Simple Microphone Control for macOS</title>
+    <link rel="icon" type="image/webp" href="icon.webp">
+    <style>
+        :root {
+            --bg-color: #050505;
+            --text-color: #ffffff;
+            --accent-color: #00d1ff;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .plasma-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            background: var(--bg-color);
+            overflow: hidden;
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.6;
+            animation: move 20s infinite alternate ease-in-out;
+        }
+
+        .blob-1 {
+            width: 60vw;
+            height: 60vw;
+            background: radial-gradient(circle, #7000ff 0%, transparent 70%);
+            top: -10vh;
+            left: -10vw;
+            animation-duration: 25s;
+        }
+
+        .blob-2 {
+            width: 70vw;
+            height: 70vw;
+            background: radial-gradient(circle, #0011ff 0%, transparent 70%);
+            bottom: -15vh;
+            right: -10vw;
+            animation-duration: 30s;
+        }
+
+        .blob-3 {
+            width: 50vw;
+            height: 50vw;
+            background: radial-gradient(circle, #ff00d1 0%, transparent 70%);
+            top: 20vh;
+            right: 10vw;
+            animation-duration: 22s;
+        }
+
+        .blob-4 {
+            width: 55vw;
+            height: 55vw;
+            background: radial-gradient(circle, #00d1ff 0%, transparent 70%);
+            bottom: 10vh;
+            left: 5vw;
+            animation-duration: 35s;
+        }
+
+        @keyframes move {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(15vw, 10vh) scale(1.1); }
+        }
+
+        main {
+            position: relative;
+            text-align: center;
+            max-width: 600px;
+            width: 90%;
+            padding: 40px 20px;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(20px);
+            border-radius: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .icon {
+            width: 128px;
+            height: 128px;
+            margin-bottom: 24px;
+            border-radius: 28px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin: 0 0 16px 0;
+            letter-spacing: -0.03em;
+            background: linear-gradient(180deg, #fff 0%, rgba(255,255,255,0.7) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p {
+            font-size: 1.25rem;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 32px;
+        }
+
+        .features {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 40px;
+        }
+
+        .feature-tag {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .actions {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .app-store-badge img {
+            height: 44px;
+            transition: transform 0.2s cubic-bezier(0.2, 0, 0.2, 1);
+        }
+
+        .app-store-badge:hover img {
+            transform: scale(1.05);
+        }
+
+        .github-link {
+            color: rgba(255, 255, 255, 0.4);
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: color 0.2s ease;
+        }
+
+        .github-link:hover {
+            color: #fff;
+        }
+
+        .github-link svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        footer {
+            position: fixed;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            z-index: 20;
+        }
+
+        .privacy-link {
+            color: rgba(255, 255, 255, 0.3);
+            text-decoration: none;
+            font-size: 0.8rem;
+            transition: color 0.2s;
+            cursor: pointer;
+        }
+
+        .privacy-link:hover {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        #privacy-content {
+            display: none;
+            text-align: left;
+            max-height: 70vh;
+            overflow-y: auto;
+            padding: 0 20px;
+        }
+
+        #privacy-content h2 { margin-top: 0 }
+        #privacy-content h3 { font-size: 1.1rem; margin-top: 24px; color: #fff }
+        #privacy-content p { font-size: 1rem; margin-bottom: 16px; text-align: left }
+
+        .back-button {
+            display: inline-block;
+            margin-top: 20px;
+            color: var(--accent-color);
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        @media (max-width: 480px) {
+            h1 { font-size: 2.5rem }
+            p { font-size: 1.1rem }
+            main { margin: 20px; border-radius: 30px; padding: 30px 15px }
+        }
+    </style>
+</head>
+<body>
+    <div class="plasma-bg">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+        <div class="blob blob-4"></div>
+    </div>
+
+    <main id="main-content">
+        <div id="landing-view">
+            <img src="icon.webp" alt="Micra Icon" class="icon">
+            <h1>Micra</h1>
+            <p>The tiny menu bar app that gives you full control over your microphone. Simple, fast, and stays out of your way.</p>
+
+            <div class="features">
+                <span class="feature-tag">Global Hotkey</span>
+                <span class="feature-tag">Push-to-Talk</span>
+                <span class="feature-tag">Auto-Lock</span>
+                <span class="feature-tag">Native Feel</span>
+            </div>
+
+            <div class="actions">
+                <a href="#" class="app-store-badge">
+                    <img src="badge.svg" alt="Download on the App Store">
+                </a>
+
+                <a href="https://github.com/coreequip/micra" class="github-link">
+                    <svg viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+                    Open Source on GitHub
+                </a>
+            </div>
+        </div>
+
+        <div id="privacy-content">
+            <h2>Privacy Policy</h2>
+            <p>Micra is designed with privacy as a core principle. The app is a local utility tool and does not collect, store, or transmit any personal data.</p>
+
+            <h3>1. Data Collection</h3>
+            <p>Micra does not collect any personal information, usage statistics, or crash reports. All settings are stored locally on your device using macOS standard defaults.</p>
+
+            <h3>2. Audio Access</h3>
+            <p>Micra requires access to your microphone solely to perform its primary function: muting and unmuting the device at the system level. Micra does not record, process, or transmit any audio data.</p>
+
+            <h3>3. Data Transmission</h3>
+            <p>The app has no networking capabilities and does not communicate with any external servers. No data ever leaves your computer.</p>
+
+            <h3>4. Third Parties</h3>
+            <p>Since no data is collected, no data is ever shared with third parties.</p>
+
+            <h3>5. Changes to this Policy</h3>
+            <p>This privacy policy may be updated from time to time. Any changes will be reflected on this page.</p>
+
+            <a href="#" class="back-button">← Back to App</a>
+        </div>
+    </main>
+
+    <footer>
+        <a href="#/privacy-policy" class="privacy-link">Privacy Policy</a>
+    </footer>
+
+    <script>
+        const _ = id => document.getElementById(id)
+        const blobs = document.querySelectorAll('.blob')
+        window.addEventListener('mousemove', e => {
+            const x = (e.clientX / window.innerWidth - 0.5) * 60
+            const y = (e.clientY / window.innerHeight - 0.5) * 60
+            blobs.forEach((blob, index) => {
+                const factor = (index + 1) * 0.3
+                blob.style.transform = `translate(${x * factor}px, ${y * factor}px)`
+            })
+        })
+
+        function handleRoute() {
+            const hash = window.location.hash
+            const m = _('main-content')
+            m.style.opacity = '0'
+            setTimeout(() => {
+                if (hash === '#/privacy-policy' || hash === '#privacy') {
+                    _('landing-view').style.display = 'none'
+                    _('privacy-content').style.display = 'block'
+                } else {
+                    _('privacy-content').style.display = 'none'
+                    _('landing-view').style.display = 'block'
+                }
+                m.style.opacity = '1'
+            }, 150)
+        }
+
+        window.addEventListener('hashchange', handleRoute)
+        window.addEventListener('load', handleRoute)
+    </script>
+</body>
+</html>
